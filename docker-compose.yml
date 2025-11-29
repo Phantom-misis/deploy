@@ -12,12 +12,14 @@ services:
       - '443:443'
 
     volumes:
-      - ./letsencrypt:/letsencrypt
+      - letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
     command:
       - '--api.dashboard=true'
       - '--api.insecure=false'
       - '--providers.docker=true'
+      - '--providers.docker.endpoint=unix:///var/run/docker.sock'
       - '--providers.docker.exposedbydefault=false'
       - '--entrypoints.web.address=:80'
       - '--entrypoints.web.http.redirections.entrypoint.to=websecure'
@@ -36,21 +38,23 @@ services:
 
   redis:
     image: redis:8.4.0
+    container_name: redis
     ports:
       - '13394:6379'
     volumes:
       - redis_data:/data
-    command: redis-server --requirepass ...
+    command: redis-server --requirepass YOUR_REDIS_PASSWORD
     networks:
       - default
 
   backend:
     image: ghcr.io/phantom-misis/backend:latest
     container_name: backend
-    ports:
-      - "8080:8080"
     restart: unless-stopped
     env_file: .env
+    networks:
+      - default
+
     labels:
       - 'traefik.enable=true'
       - 'traefik.http.routers.portfolio-analyzer.rule=Host(`fcdc5ae656279f7ee87b25ea.duckdns.org`)'
